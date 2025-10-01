@@ -9,7 +9,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using Tibia.Protobuf.Staticdata;
 
-
 namespace Canary_monster_editor
 {
     public partial class ExportImportWindow : Window
@@ -43,7 +42,6 @@ namespace Canary_monster_editor
             LoadCreatures(ListType.Monsters);
         }
 
-        // Evento para mover a janela ao arrastar a barra de título
         private void TitleBar_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed)
@@ -54,7 +52,7 @@ namespace Canary_monster_editor
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            Close();
         }
 
         private void TypeRadioButton_Checked(object sender, RoutedEventArgs e)
@@ -71,127 +69,153 @@ namespace Canary_monster_editor
 
         private void LoadCreatures(ListType type)
         {
-            if (Data.GlobalStaticData == null) return;
+            if (Data.GlobalStaticData == null)
+            {
+                return;
+            }
 
             CreatureListBox.Items.Clear();
+            foreach (var item in EnumerateCreatures(type))
+            {
+                CreatureListBox.Items.Add(item);
+            }
+        }
 
+        private IEnumerable<CreatureSelectionItem> EnumerateCreatures(ListType type)
+        {
             if (type == ListType.Monsters)
             {
                 foreach (var monster in Data.GlobalStaticData.Monster)
                 {
-                    CreatureListBox.Items.Add(new CreatureSelectionItem
-                    {
-                        DisplayText = $"{monster.Name} (ID: {monster.Raceid})",
-                        Data = new CreatureExportData
-                        {
-                            Type = "monster",
-                            Id = monster.Raceid,
-                            Name = monster.Name,
-                            LookType = monster.AppearanceType?.Outfittype ?? 0,
-                            LookTypeEx = monster.AppearanceType?.Itemtype ?? 0,
-                            Addon = monster.AppearanceType?.Outfitaddon ?? 0,
-                            LookHead = monster.AppearanceType?.Colors?.Lookhead ?? 0,
-                            LookBody = monster.AppearanceType?.Colors?.Lookbody ?? 0,
-                            LookLegs = monster.AppearanceType?.Colors?.Looklegs ?? 0,
-                            LookFeet = monster.AppearanceType?.Colors?.Lookfeet ?? 0
-                        },
-                        IsSelected = false
-                    });
+                    yield return CreateSelectionItem(monster.Name, monster.Raceid, monster.AppearanceType, "monster");
                 }
+
+                yield break;
             }
-            else
+
+            foreach (var boss in Data.GlobalStaticData.Boss)
             {
-                foreach (var boss in Data.GlobalStaticData.Boss)
-                {
-                    CreatureListBox.Items.Add(new CreatureSelectionItem
-                    {
-                        DisplayText = $"{boss.Name} (ID: {boss.Id})",
-                        Data = new CreatureExportData
-                        {
-                            Type = "boss",
-                            Id = boss.Id,
-                            Name = boss.Name,
-                            LookType = boss.AppearanceType?.Outfittype ?? 0,
-                            LookTypeEx = boss.AppearanceType?.Itemtype ?? 0,
-                            Addon = boss.AppearanceType?.Outfitaddon ?? 0,
-                            LookHead = boss.AppearanceType?.Colors?.Lookhead ?? 0,
-                            LookBody = boss.AppearanceType?.Colors?.Lookbody ?? 0,
-                            LookLegs = boss.AppearanceType?.Colors?.Looklegs ?? 0,
-                            LookFeet = boss.AppearanceType?.Colors?.Lookfeet ?? 0
-                        },
-                        IsSelected = false
-                    });
-                }
+                yield return CreateSelectionItem(boss.Name, boss.Id, boss.AppearanceType, "boss");
             }
+        }
+
+        private static CreatureSelectionItem CreateSelectionItem(string name, uint id, Appearance_Type appearance, string type)
+        {
+            return new CreatureSelectionItem
+            {
+                DisplayText = $"{name} (ID: {id})",
+                Data = new CreatureExportData
+                {
+                    Type = type,
+                    Id = id,
+                    Name = name,
+                    LookType = appearance?.Outfittype ?? 0,
+                    LookTypeEx = appearance?.Itemtype ?? 0,
+                    Addon = appearance?.Outfitaddon ?? 0,
+                    LookHead = appearance?.Colors?.Lookhead ?? 0,
+                    LookBody = appearance?.Colors?.Lookbody ?? 0,
+                    LookLegs = appearance?.Colors?.Looklegs ?? 0,
+                    LookFeet = appearance?.Colors?.Lookfeet ?? 0,
+                },
+                IsSelected = false,
+            };
         }
 
         private void CreatureListBox_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             var listBox = (ListBox)sender;
             var item = ItemsControl.ContainerFromElement(listBox, e.OriginalSource as DependencyObject) as ListBoxItem;
-            
-            if (item == null) return;
+            if (item == null)
+            {
+                return;
+            }
 
             int currentIndex = listBox.Items.IndexOf(item.DataContext);
-            
+            if (currentIndex < 0)
+            {
+                return;
+            }
+
             if (Keyboard.Modifiers == ModifierKeys.Shift && lastIndex != -1 && currentIndex != lastIndex)
             {
-                int start = Math.Min(lastIndex, currentIndex);
-                int end = Math.Max(lastIndex, currentIndex);
-                
-                for (int i = start; i <= end; i++)
-                {
-                    if (listBox.Items[i] is CreatureSelectionItem creature)
-                    {
-                        creature.IsSelected = true;
-                    }
-                }
-                
-                listBox.Items.Refresh();
+                SelectRange(listBox, lastIndex, currentIndex, true);
                 e.Handled = true;
             }
             else if (Keyboard.Modifiers != ModifierKeys.Control)
             {
-                // Seleção única
-                foreach (var listItem in listBox.Items)
+                SelectAllItems(listBox, false);
+                SetItemSelection(listBox, currentIndex, true);
+                listBox.Items.Refresh();
+            }
+            else
+            {
+                ToggleItemSelection(listBox, currentIndex);
+            }
+
+            lastIndex = currentIndex;
+        }
+
+        private static void SelectRange(ListBox listBox, int startIndex, int endIndex, bool isSelected)
+        {
+            int start = Math.Min(startIndex, endIndex);
+            int end = Math.Max(startIndex, endIndex);
+            for (int i = start; i <= end; i++)
+            {
+                SetItemSelection(listBox, i, isSelected);
+            }
+
+            listBox.Items.Refresh();
+        }
+
+        private static void SelectAllItems(ListBox listBox, bool isSelected)
+        {
+            foreach (var listItem in listBox.Items)
+            {
+                if (listItem is CreatureSelectionItem creature)
                 {
-                    if (listItem is CreatureSelectionItem creature)
-                    {
-                        creature.IsSelected = false;
-                    }
-                }
-                
-                if (listBox.Items[currentIndex] is CreatureSelectionItem selectedCreature)
-                {
-                    selectedCreature.IsSelected = true;
+                    creature.IsSelected = isSelected;
                 }
             }
-            
-            lastIndex = currentIndex;
+
+            listBox.Items.Refresh();
+        }
+
+        private static void SetItemSelection(ListBox listBox, int index, bool isSelected)
+        {
+            if (index < 0 || index >= listBox.Items.Count)
+            {
+                return;
+            }
+
+            if (listBox.Items[index] is CreatureSelectionItem creature)
+            {
+                creature.IsSelected = isSelected;
+            }
+        }
+
+        private static void ToggleItemSelection(ListBox listBox, int index)
+        {
+            if (index < 0 || index >= listBox.Items.Count)
+            {
+                return;
+            }
+
+            if (listBox.Items[index] is CreatureSelectionItem creature)
+            {
+                creature.IsSelected = !creature.IsSelected;
+            }
+
+            listBox.Items.Refresh();
         }
 
         private void SelectAllButton_Click(object sender, RoutedEventArgs e)
         {
-            foreach (var item in CreatureListBox.Items)
-            {
-                if (item is CreatureSelectionItem creature)
-                {
-                    creature.IsSelected = true;
-                }
-            }
-            CreatureListBox.Items.Refresh();
+            SelectAllItems(CreatureListBox, true);
         }
 
         private void DeselectAllButton_Click(object sender, RoutedEventArgs e)
         {
-            foreach (var item in CreatureListBox.Items)
-            {
-                if (item is CreatureSelectionItem creature)
-                {
-                    creature.IsSelected = false;
-                }
-            }
-            CreatureListBox.Items.Refresh();
+            SelectAllItems(CreatureListBox, false);
         }
 
         private void ExportButton_Click(object sender, RoutedEventArgs e)
@@ -204,14 +228,14 @@ namespace Canary_monster_editor
 
             if (!selectedItems.Any())
             {
-                MessageBox.Show("Please select at least one creature", "Export", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Select at least one creature to export.");
                 return;
             }
 
             SaveFileDialog saveFileDialog = new SaveFileDialog
             {
-                Filter = "JSON files (*.json)|*.json",
-                DefaultExt = ".json"
+                Filter = "JSON Files (*.json)|*.json",
+                Title = "Save JSON File",
             };
 
             if (saveFileDialog.ShowDialog() == true)
@@ -220,11 +244,11 @@ namespace Canary_monster_editor
                 {
                     string json = JsonConvert.SerializeObject(selectedItems, Formatting.Indented);
                     File.WriteAllText(saveFileDialog.FileName, json);
-                    MessageBox.Show($"Successfully exported {selectedItems.Count} creatures", "Export", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("Creatures exported successfully!");
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Export failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show($"Failed to export creatures: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
@@ -233,7 +257,8 @@ namespace Canary_monster_editor
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
             {
-                Filter = "JSON files (*.json)|*.json"
+                Filter = "JSON Files (*.json)|*.json",
+                Title = "Import JSON File",
             };
 
             if (openFileDialog.ShowDialog() == true)
@@ -241,122 +266,132 @@ namespace Canary_monster_editor
                 try
                 {
                     string json = File.ReadAllText(openFileDialog.FileName);
-                    var importedItems = JsonConvert.DeserializeObject<List<CreatureExportData>>(json);
+                    var importedCreatures = JsonConvert.DeserializeObject<List<CreatureExportData>>(json);
 
-                    if (importedItems == null || !importedItems.Any())
+                    if (importedCreatures == null || importedCreatures.Count == 0)
                     {
-                        MessageBox.Show("No valid creatures found in file", "Import", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        MessageBox.Show("No creatures were imported.");
                         return;
                     }
 
-                    int updatedCount = 0;
-                    int createdCount = 0;
-                    int skippedCount = 0;
-
-                    foreach (var importedItem in importedItems)
+                    foreach (var creature in importedCreatures)
                     {
-                        if (importedItem.Type == "monster")
+                        if (creature.Type == "monster")
                         {
-                            Monster monster = Data.GetMonsterByRaceId(importedItem.Id);
-                            if (monster == null)
+                            var monster = Data.GetMonsterByRaceId(creature.Id);
+                            if (monster != null)
                             {
-                                monster = new Monster
-                                {
-                                    Raceid = importedItem.Id,
-                                    Name = importedItem.Name,
-                                    AppearanceType = new Appearance_Type()
-                                };
-                                Data.GlobalStaticData.Monster.Add(monster);
-                                createdCount++;
+                                UpdateAppearance(monster, creature);
                             }
                             else
                             {
-                                monster.Name = importedItem.Name;
-                                updatedCount++;
+                                CreateMonsterFromImport(creature);
                             }
-
-                            if (monster.AppearanceType == null) 
-                                monster.AppearanceType = new Appearance_Type();
-                            
-                            monster.AppearanceType.Outfittype = importedItem.LookType;
-                            monster.AppearanceType.Itemtype = importedItem.LookTypeEx;
-                            monster.AppearanceType.Outfitaddon = importedItem.Addon;
-                            
-                            if (monster.AppearanceType.Colors == null) 
-                                monster.AppearanceType.Colors = new Colors();
-                            
-                            monster.AppearanceType.Colors.Lookhead = importedItem.LookHead;
-                            monster.AppearanceType.Colors.Lookbody = importedItem.LookBody;
-                            monster.AppearanceType.Colors.Looklegs = importedItem.LookLegs;
-                            monster.AppearanceType.Colors.Lookfeet = importedItem.LookFeet;
                         }
-                        else if (importedItem.Type == "boss")
+                        else if (creature.Type == "boss")
                         {
-                            Boss boss = Data.GetBossById(importedItem.Id);
-                            if (boss == null)
+                            var boss = Data.GetBossById(creature.Id);
+                            if (boss != null)
                             {
-                                boss = new Boss
-                                {
-                                    Id = importedItem.Id,
-                                    Name = importedItem.Name,
-                                    AppearanceType = Data.GlobalBossAppearancesObjects ? 
-                                        new Appearance_Type() : null
-                                };
-                                Data.GlobalStaticData.Boss.Add(boss);
-                                createdCount++;
+                                UpdateAppearance(boss, creature);
                             }
                             else
                             {
-                                boss.Name = importedItem.Name;
-                                updatedCount++;
-                            }
-
-                            if (Data.GlobalBossAppearancesObjects)
-                            {
-                                if (boss.AppearanceType == null) 
-                                    boss.AppearanceType = new Appearance_Type();
-                                
-                                boss.AppearanceType.Outfittype = importedItem.LookType;
-                                boss.AppearanceType.Itemtype = importedItem.LookTypeEx;
-                                boss.AppearanceType.Outfitaddon = importedItem.Addon;
-                                
-                                if (boss.AppearanceType.Colors == null) 
-                                    boss.AppearanceType.Colors = new Colors();
-                                
-                                boss.AppearanceType.Colors.Lookhead = importedItem.LookHead;
-                                boss.AppearanceType.Colors.Lookbody = importedItem.LookBody;
-                                boss.AppearanceType.Colors.Looklegs = importedItem.LookLegs;
-                                boss.AppearanceType.Colors.Lookfeet = importedItem.LookFeet;
-                            }
-                            else
-                            {
-                                skippedCount++;
+                                CreateBossFromImport(creature);
                             }
                         }
                     }
 
-                    string message = $"Import completed:\n" +
-                                     $"- Updated: {updatedCount}\n" +
-                                     $"- Created: {createdCount}\n";
-                    
-                    if (skippedCount > 0)
-                    {
-                        message += $"- Skipped (boss appearance not supported): {skippedCount}\n";
-                    }
-
-                    MessageBox.Show(message, "Import", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("Creatures imported successfully!");
                     LoadCreatures(MonsterRadio.IsChecked == true ? ListType.Monsters : ListType.Bosses);
-                    if (Application.Current.MainWindow is MainWindow mainWindow)
+
+                    if (Application.Current.MainWindow is MainWindow mw)
                     {
-                        mainWindow.HasGlobalChangeMade = true;
-                        mainWindow.ReloadMainListBox();
+                        mw.HasGlobalChangeMade = true;
+                        mw.ReloadMainListBox();
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Import failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show($"Failed to import creatures: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
+            }
+        }
+
+        private static void UpdateAppearance(Monster monster, CreatureExportData creature)
+        {
+            monster.Name = creature.Name;
+            if (monster.AppearanceType == null)
+            {
+                monster.AppearanceType = new Appearance_Type();
+            }
+
+            monster.AppearanceType.Outfittype = creature.LookType;
+            monster.AppearanceType.Itemtype = creature.LookTypeEx;
+            monster.AppearanceType.Outfitaddon = creature.Addon;
+            EnsureColors(monster.AppearanceType);
+            monster.AppearanceType.Colors.Lookhead = creature.LookHead;
+            monster.AppearanceType.Colors.Lookbody = creature.LookBody;
+            monster.AppearanceType.Colors.Looklegs = creature.LookLegs;
+            monster.AppearanceType.Colors.Lookfeet = creature.LookFeet;
+        }
+
+        private static void UpdateAppearance(Boss boss, CreatureExportData creature)
+        {
+            boss.Name = creature.Name;
+            if (!Data.GlobalBossAppearancesObjects)
+            {
+                return;
+            }
+
+            if (boss.AppearanceType == null)
+            {
+                boss.AppearanceType = new Appearance_Type();
+            }
+
+            boss.AppearanceType.Outfittype = creature.LookType;
+            boss.AppearanceType.Itemtype = creature.LookTypeEx;
+            boss.AppearanceType.Outfitaddon = creature.Addon;
+            EnsureColors(boss.AppearanceType);
+            boss.AppearanceType.Colors.Lookhead = creature.LookHead;
+            boss.AppearanceType.Colors.Lookbody = creature.LookBody;
+            boss.AppearanceType.Colors.Looklegs = creature.LookLegs;
+            boss.AppearanceType.Colors.Lookfeet = creature.LookFeet;
+        }
+
+        private static void CreateMonsterFromImport(CreatureExportData creature)
+        {
+            var monster = new Monster
+            {
+                Raceid = creature.Id,
+                Name = creature.Name,
+                AppearanceType = new Appearance_Type(),
+            };
+
+            UpdateAppearance(monster, creature);
+            Data.GlobalStaticData.Monster.Add(monster);
+        }
+
+        private static void CreateBossFromImport(CreatureExportData creature)
+        {
+            var boss = new Boss
+            {
+                Id = creature.Id,
+                Name = creature.Name,
+                AppearanceType = Data.GlobalBossAppearancesObjects ? new Appearance_Type() : null,
+            };
+
+            UpdateAppearance(boss, creature);
+            Data.GlobalStaticData.Boss.Add(boss);
+        }
+
+        private static void EnsureColors(Appearance_Type appearance)
+        {
+            if (appearance.Colors == null)
+            {
+                appearance.Colors = new Colors();
             }
         }
     }
 }
+
