@@ -121,7 +121,7 @@ namespace Canary_monster_editor
             }
 
             var rect = (Rectangle)sender;
-            rect.Opacity = 0.25;
+            rect.Opacity = 1;
         }
         private void SecondaryButtonMouseLeave_rectangle(object sender, MouseEventArgs e)
         {
@@ -130,7 +130,7 @@ namespace Canary_monster_editor
             }
 
             var rect = (Rectangle)sender;
-            rect.Opacity = 0;
+            rect.Opacity = 0.8;
         }
         private void SecondaryButtonMouseDown_rectangle(object sender, MouseButtonEventArgs e)
         {
@@ -139,7 +139,7 @@ namespace Canary_monster_editor
             }
 
             var rect = (Rectangle)sender;
-            rect.Opacity = 0.50;
+            rect.Opacity = 1;
         }
         private void SecondaryButtonMouseUp_rectangle(object sender, MouseButtonEventArgs e)
         {
@@ -148,7 +148,7 @@ namespace Canary_monster_editor
             }
 
             var rect = (Rectangle)sender;
-            rect.Opacity = 0.25;
+            rect.Opacity = 0.8;
             ParseSecondaryButtonClick(rect.Name);
         }
         #endregion
@@ -393,7 +393,7 @@ namespace Canary_monster_editor
             }
 
             var rect = (Rectangle)sender;
-            rect.Opacity = 0.75;
+            rect.Opacity = 0.8;
             ParseMainButtonClick(rect.Name);
         }
         private void MainButtonMouseLeave_rectangle(object sender, MouseEventArgs e)
@@ -403,7 +403,7 @@ namespace Canary_monster_editor
             }
 
             var rect = (Rectangle)sender;
-            rect.Opacity = 0.75;
+            rect.Opacity = 0.8;
         }
         #endregion
 
@@ -427,6 +427,10 @@ namespace Canary_monster_editor
         #endregion
 
         #region Global and internal functions.
+        private void Search_textbox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            ReloadMainListBox();
+        }
         private void TextChanged_textblock(object sender, TextChangedEventArgs e)
         {
             if (SelectedCreature == null) {
@@ -600,16 +604,28 @@ namespace Canary_monster_editor
                 return;
             }
 
+            string filter = Search_textbox.Text.Trim().ToLower();
+
             MainList_listbox.BeginInit();
 
             MainList_listbox.Items.Clear();
             if (SelectedListType_t == ListType.Monsters) {
                 foreach (var monster in GlobalStaticData.Monster) {
-                    MainList_listbox.Items.Add(new InternalItemList(monster.Name, monster.Raceid));
+                    bool matches = string.IsNullOrEmpty(filter) || 
+                                   monster.Name.ToLower().Contains(filter) || 
+                                   monster.Raceid.ToString().Contains(filter);
+                    if (matches) {
+                        MainList_listbox.Items.Add(new InternalItemList(monster.Name, monster.Raceid));
+                    }
                 }
             } else if (SelectedListType_t == ListType.Bosses) {
                 foreach (var boss in GlobalStaticData.Boss) {
-                    MainList_listbox.Items.Add(new InternalItemList(boss.Name, boss.Id));
+                    bool matches = string.IsNullOrEmpty(filter) || 
+                                   boss.Name.ToLower().Contains(filter) || 
+                                   boss.Id.ToString().Contains(filter);
+                    if (matches) {
+                        MainList_listbox.Items.Add(new InternalItemList(boss.Name, boss.Id));
+                    }
                 }
             }
 

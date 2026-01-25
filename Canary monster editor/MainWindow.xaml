@@ -80,43 +80,48 @@
             </StackPanel>
         </Grid>
 
-        <Grid Grid.ColumnSpan="2" Grid.Row="1" Margin="0,0,0,0" Background="#FF232020">
+        <Grid Grid.ColumnSpan="2" Grid.Row="1" Margin="5,0,5,0" Background="#FF1E1E22">
             <Rectangle MouseDown="MouseDownToDrag_var" Fill="White" Opacity="0"/>
-            <StackPanel Orientation="Horizontal" Margin="2,0,20,0">
-                <Grid Width="75" Height="50">
-                    <Rectangle x:Name="MainButton_rectangle" MouseDown="MainButtonMouseDown_rectangle" MouseUp="MainButtonMouseUp_rectangle" MouseLeave="MainButtonMouseLeave_rectangle" Fill="#FFFFA000" Opacity="0.75"/>
-                    <TextBlock x:Name="MainButon_textblock" Text="MainButon_textblock" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="Bold" FontFamily="Segoe UI Symbol" IsHitTestVisible="False"/>
+            <StackPanel Orientation="Horizontal" Margin="20,0,20,0">
+                <Grid Width="60" Height="35" VerticalAlignment="Center">
+                    <Rectangle x:Name="MainButton_rectangle" MouseDown="MainButtonMouseDown_rectangle" MouseUp="MainButtonMouseUp_rectangle" MouseLeave="MainButtonMouseLeave_rectangle" Fill="#FFFFA000" Opacity="0.8" RadiusX="4" RadiusY="4" Cursor="Hand"/>
+                    <TextBlock x:Name="MainButon_textblock" Text="OPEN" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold" FontSize="11" IsHitTestVisible="False"/>
                 </Grid>
-                <Grid Width="70" Height="50" Margin="2,0,0,0">
-                    <Rectangle x:Name="MonsterButton_rectangle" MouseUp="SecondaryButtonMouseUp_rectangle" MouseDown="SecondaryButtonMouseDown_rectangle" MouseEnter="SecondaryButtonMouseEnter_rectangle" MouseLeave="SecondaryButtonMouseLeave_rectangle" Fill="#FFFF9A00" Opacity="0"/>
-                    <TextBlock x:Name="MonsterButon_textblock" Text="MonsterButon_textblock" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="Bold" FontFamily="Segoe UI Symbol" IsHitTestVisible="False"/>
+                <Grid Width="80" Height="35" Margin="10,0,0,0" VerticalAlignment="Center">
+                    <Rectangle x:Name="MonsterButton_rectangle" MouseUp="SecondaryButtonMouseUp_rectangle" MouseDown="SecondaryButtonMouseDown_rectangle" MouseEnter="SecondaryButtonMouseEnter_rectangle" MouseLeave="SecondaryButtonMouseLeave_rectangle" Fill="#FF3E3E42" Opacity="0.8" RadiusX="4" RadiusY="4" Cursor="Hand"/>
+                    <TextBlock x:Name="MonsterButon_textblock" Text="Monster" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold" FontSize="11" IsHitTestVisible="False"/>
                 </Grid>
-                <Grid Width="70" Height="50" Margin="2,0,0,0">
-                    <Rectangle x:Name="BossButton_rectangle" MouseUp="SecondaryButtonMouseUp_rectangle" MouseDown="SecondaryButtonMouseDown_rectangle" MouseEnter="SecondaryButtonMouseEnter_rectangle" MouseLeave="SecondaryButtonMouseLeave_rectangle" Fill="#FFFF9A00" Opacity="0"/>
-                    <TextBlock x:Name="BossButon_textblock" Text="BossButon_textblock" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="Bold" FontFamily="Segoe UI Symbol" IsHitTestVisible="False"/>
+                <Grid Width="80" Height="35" Margin="5,0,0,0" VerticalAlignment="Center">
+                    <Rectangle x:Name="BossButton_rectangle" MouseUp="SecondaryButtonMouseUp_rectangle" MouseDown="SecondaryButtonMouseDown_rectangle" MouseEnter="SecondaryButtonMouseEnter_rectangle" MouseLeave="SecondaryButtonMouseLeave_rectangle" Fill="#FF3E3E42" Opacity="0.8" RadiusX="4" RadiusY="4" Cursor="Hand"/>
+                    <TextBlock x:Name="BossButon_textblock" Text="Boss" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold" FontSize="11" IsHitTestVisible="False"/>
                 </Grid>
-                <Grid Width="120" Height="50" Margin="10,0,0,0">
-                    <Rectangle x:Name="ExportImportButton_rectangle" 
-                            MouseUp="ExportImportButtonMouseUp_rectangle" 
-                            MouseDown="SecondaryButtonMouseDown_rectangle" 
-                            MouseEnter="SecondaryButtonMouseEnter_rectangle" 
-                            MouseLeave="SecondaryButtonMouseLeave_rectangle" 
-                            Fill="#FFFF9A00" Opacity="0"/>
-                    <TextBlock x:Name="ExportImportButon_textblock" 
-                            Text="Export/Import" 
-                            HorizontalAlignment="Center" 
-                            VerticalAlignment="Center" 
-                            Foreground="White" 
-                            FontWeight="Bold" 
-                            FontSize="12"
-                            FontFamily="Segoe UI Symbol" 
-                            TextWrapping="Wrap"
-                            IsHitTestVisible="False"/>
+                <Grid Width="110" Height="35" Margin="5,0,0,0" VerticalAlignment="Center">
+                    <Rectangle x:Name="ExportImportButton_rectangle" MouseUp="ExportImportButtonMouseUp_rectangle" MouseDown="SecondaryButtonMouseDown_rectangle" MouseEnter="SecondaryButtonMouseEnter_rectangle" MouseLeave="SecondaryButtonMouseLeave_rectangle" Fill="#FF2E7D32" Opacity="0.8" RadiusX="4" RadiusY="4" Cursor="Hand"/>
+                    <TextBlock x:Name="ExportImportButon_textblock" Text="Export JSON" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold" FontSize="11" IsHitTestVisible="False"/>
+                </Grid>
+
+                <Grid Width="280" Height="35" Margin="20,0,0,0" VerticalAlignment="Center">
+                    <Rectangle Fill="#FF2D2D30" RadiusX="17.5" RadiusY="17.5" Opacity="0.8"/>
+                    <TextBox x:Name="Search_textbox" TextChanged="Search_textbox_TextChanged" Background="Transparent" BorderThickness="0" Foreground="White" VerticalContentAlignment="Center" Padding="35,0,15,0" FontSize="13" FontFamily="Segoe UI" CaretBrush="White"/>
+                    <TextBlock Text="Search by name or ID..." IsHitTestVisible="False" Foreground="#FF888888" VerticalAlignment="Center" Margin="35,0,0,0" FontSize="13">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Text, ElementName=Search_textbox}" Value="">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <TextBlock Text="🔍" Foreground="#FF888888" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="12,0,0,0" FontSize="14"/>
                 </Grid>
             </StackPanel>
+
             <Grid HorizontalAlignment="Right">
                 <Rectangle Fill="#FF18191D" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Stroke="Black"/>
-                <StackPanel VerticalAlignment="Center" Margin="0,0,2,0">
+                <StackPanel VerticalAlignment="Center" Margin="5,0,5,0">
                     <Image x:Name="PTBR_image" MouseDown="CultureMouseDown_image" Source="/Portuguese-flag.png" Height="16" Width="16" Margin="0,0,0,5"/>
                     <Image x:Name="ENUS_image" MouseDown="CultureMouseDown_image" Source="/English-flag.png" Height="16" Width="16" Opacity="0.5"/>
                 </StackPanel>
