@@ -235,12 +235,18 @@
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AssetLoader.cs" />
+    <Compile Include="Lzma.cs" />
+    <Compile Include="SpriteCatalogStorage.cs" />
+    <Compile Include="Sprite.cs" />
     <Compile Include="ExportImportWindow.xaml.cs">
       <DependentUpon>ExportImportWindow.xaml</DependentUpon>
     </Compile>
