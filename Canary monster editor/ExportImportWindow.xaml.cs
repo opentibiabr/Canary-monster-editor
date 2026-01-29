@@ -339,6 +339,7 @@ namespace Canary_monster_editor
         private static void UpdateAppearance(Boss boss, CreatureExportData creature)
         {
             boss.Name = creature.Name;
+
             if (!Data.GlobalBossAppearancesObjects)
             {
                 return;
