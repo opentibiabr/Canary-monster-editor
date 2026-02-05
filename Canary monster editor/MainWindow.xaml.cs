@@ -285,13 +285,39 @@ namespace Canary_monster_editor
                             }
 
                             monster.Name = ShowName_textbox.Text;
+
+                            uint newRaceId = 0;
+                            if (uint.TryParse(ShowRaceId_textbox.Text, out newRaceId) && newRaceId != monster.Raceid)
+                            {
+                                Monster existingMonster = GetMonsterByRaceId(newRaceId);
+                                if (existingMonster != null)
+                                {
+                                    MessageBox.Show($"ID {newRaceId} is already being used by another monster: {existingMonster.Name}",
+                                        "Duplicate ID", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                    ShowRaceId_textbox.Text = monster.Raceid.ToString();
+                                    return;
+                                }
+
+                                Boss existingBoss = GetBossById(newRaceId);
+                                if (existingBoss != null)
+                                {
+                                    MessageBox.Show($"ID {newRaceId} is already being used by a boss: {existingBoss.Name}",
+                                        "Duplicate ID", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                    ShowRaceId_textbox.Text = monster.Raceid.ToString();
+                                    return;
+                                }
+
+                                monster.Raceid = newRaceId;
+                                SelectedCreature.id = newRaceId;
+                            }
+
                             if (monster.AppearanceType == null) {
                                 monster.AppearanceType = new Appearance_Type();
                             }
 
                             uint parsedUint = 0;
                             uint.TryParse(ShowLookType_textbox.Text, out parsedUint);
-                            monster.AppearanceType.Outfittype = 0;
+                            monster.AppearanceType.Outfittype = parsedUint;
                             parsedUint = 0;
 
                             uint.TryParse(ShowAddon_textbox.Text, out parsedUint);
@@ -299,7 +325,7 @@ namespace Canary_monster_editor
                             parsedUint = 0;
 
                             if (monster.AppearanceType.Colors == null) {
-                                 monster.AppearanceType.Colors = new Tibia.Protobuf.Staticdata.Colors();
+                                monster.AppearanceType.Colors = new Tibia.Protobuf.Staticdata.Colors();
                             }
 
                             uint.TryParse(ShowLookHead_textbox.Text, out parsedUint);
@@ -328,6 +354,32 @@ namespace Canary_monster_editor
                             }
 
                             boss.Name = ShowName_textbox.Text;
+
+                            uint newBossId = 0;
+                            if (uint.TryParse(ShowRaceId_textbox.Text, out newBossId) && newBossId != boss.Id)
+                            {
+                                Boss existingBoss = GetBossById(newBossId);
+                                if (existingBoss != null)
+                                {
+                                    MessageBox.Show($"ID {newBossId} is already being used by another boss: {existingBoss.Name}",
+                                        "Duplicate ID", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                    ShowRaceId_textbox.Text = boss.Id.ToString();
+                                    return;
+                                }
+
+                                Monster existingMonster = GetMonsterByRaceId(newBossId);
+                                if (existingMonster != null)
+                                {
+                                    MessageBox.Show($"ID {newBossId} is already being used by a monster: {existingMonster.Name}",
+                                        "Duplicate ID", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                    ShowRaceId_textbox.Text = boss.Id.ToString();
+                                    return;
+                                }
+
+                                boss.Id = newBossId;
+                                SelectedCreature.id = newBossId;
+                            }
+
                             if (GlobalBossAppearancesObjects) {
                                 if (boss.AppearanceType == null) {
                                     boss.AppearanceType = new Appearance_Type();
@@ -627,7 +679,7 @@ namespace Canary_monster_editor
                     return;
                 }
 
-                ShowRaceId_textblock.Text = "ID: " + boss.Id.ToString();
+                ShowRaceId_textbox.Text = boss.Id.ToString();
                 SelectedCreature.name = boss.Name;
                 ShowName_textbox.Text = boss.Name;
 
@@ -665,7 +717,7 @@ namespace Canary_monster_editor
                     return;
                 }
 
-                ShowRaceId_textblock.Text = "ID: " + monster.Raceid.ToString();
+                ShowRaceId_textbox.Text = monster.Raceid.ToString();
                 SelectedCreature.name = monster.Name;
                 ShowName_textbox.Text = monster.Name;
 
