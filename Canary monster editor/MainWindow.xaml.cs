@@ -476,6 +476,10 @@ namespace Canary_monster_editor
             SelectedCreature = selectedItem;
             ReloadShowGrid();
         }
+        private void Search_textbox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            ReloadMainListBox();
+        }
         private void MainURIMouseDown_rectangle(object sender, MouseButtonEventArgs e)
         {
             string name = string.Empty;
@@ -600,16 +604,31 @@ namespace Canary_monster_editor
                 return;
             }
 
-            MainList_listbox.BeginInit();
+            string filter = string.Empty;
+            if (Search_textbox != null) {
+                filter = Search_textbox.Text?.Trim().ToLower() ?? string.Empty;
+            }
 
+            MainList_listbox.BeginInit();
             MainList_listbox.Items.Clear();
+
             if (SelectedListType_t == ListType.Monsters) {
                 foreach (var monster in GlobalStaticData.Monster) {
-                    MainList_listbox.Items.Add(new InternalItemList(monster.Name, monster.Raceid));
+                    bool matches = string.IsNullOrEmpty(filter) ||
+                                monster.Name.ToLower().Contains(filter) ||
+                                monster.Raceid.ToString().Contains(filter);
+                    if (matches) {
+                        MainList_listbox.Items.Add(new InternalItemList(monster.Name, monster.Raceid));
+                    }
                 }
             } else if (SelectedListType_t == ListType.Bosses) {
                 foreach (var boss in GlobalStaticData.Boss) {
-                    MainList_listbox.Items.Add(new InternalItemList(boss.Name, boss.Id));
+                    bool matches = string.IsNullOrEmpty(filter) ||
+                                boss.Name.ToLower().Contains(filter) ||
+                                boss.Id.ToString().Contains(filter);
+                    if (matches) {
+                        MainList_listbox.Items.Add(new InternalItemList(boss.Name, boss.Id));
+                    }
                 }
             }
 
