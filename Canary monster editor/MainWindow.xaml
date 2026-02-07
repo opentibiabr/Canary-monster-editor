@@ -113,6 +113,43 @@
                             TextWrapping="Wrap"
                             IsHitTestVisible="False"/>
                 </Grid>
+                <Grid Width="280" Height="35" Margin="20,0,0,0" VerticalAlignment="Center">
+                    <Rectangle Fill="#FF2D2D30" RadiusX="17.5" RadiusY="17.5" Opacity="0.8"/>
+                    <TextBox x:Name="Search_textbox"
+                            TextChanged="Search_textbox_TextChanged"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Foreground="White"
+                            VerticalContentAlignment="Center"
+                            Padding="35,0,15,0"
+                            FontSize="13"
+                            FontFamily="Segoe UI"
+                            CaretBrush="White"/>
+                    <TextBlock x:Name="SearchPlaceholder_textblock"
+                            Text="Search by name or ID..."
+                            IsHitTestVisible="False"
+                            Foreground="#FF888888"
+                            VerticalAlignment="Center"
+                            Margin="35,0,0,0"
+                            FontSize="13">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Text, ElementName=Search_textbox}" Value="">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <TextBlock Text="🔍"
+                            Foreground="#FF888888"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Margin="12,0,0,0"
+                            FontSize="14"/>
+                </Grid>
             </StackPanel>
             <Grid HorizontalAlignment="Right">
                 <Rectangle Fill="#FF18191D" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Stroke="Black"/>

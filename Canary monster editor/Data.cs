@@ -277,6 +277,7 @@ namespace Canary_monster_editor
             SelectAll = 25,
             DeselectAll = 26,
             ExportSelected = 27,
+            SearchPlaceholder = 28,
         }
         public static readonly Dictionary<TranslationDictionaryIndex, string> TranslationDictionary_portuguese = new Dictionary<TranslationDictionaryIndex, string>
         {
@@ -307,7 +308,8 @@ namespace Canary_monster_editor
             [TranslationDictionaryIndex.ExportImport] = "Exportar/Importar",
             [TranslationDictionaryIndex.SelectAll] = "Selecionar Todos",
             [TranslationDictionaryIndex.DeselectAll] = "Desmarcar Todos",
-            [TranslationDictionaryIndex.ExportSelected] = "Exportar Selecionados"
+            [TranslationDictionaryIndex.ExportSelected] = "Exportar Selecionados",
+            [TranslationDictionaryIndex.SearchPlaceholder] = "Buscar por nome ou ID..."
         };
         public static readonly Dictionary<TranslationDictionaryIndex, string> TranslationDictionary_english = new Dictionary<TranslationDictionaryIndex, string>
         {
@@ -338,7 +340,8 @@ namespace Canary_monster_editor
             [TranslationDictionaryIndex.ExportImport] = "Export/Import",
             [TranslationDictionaryIndex.SelectAll] = "Select All",
             [TranslationDictionaryIndex.DeselectAll] = "Deselect All",
-            [TranslationDictionaryIndex.ExportSelected] = "Export Selected"
+            [TranslationDictionaryIndex.ExportSelected] = "Export Selected",
+            [TranslationDictionaryIndex.SearchPlaceholder] = "Search by name or ID..."
         };
         public static string GetCultureText(TranslationDictionaryIndex index)
         {
