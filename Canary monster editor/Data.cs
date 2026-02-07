@@ -1,8 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using Tibia.Protobuf.Staticdata;
-using Google.Protobuf;
+using System;
 using System.IO;
+using Canary_monster_editor.Localization;
+using Canary_monster_editor.Services;
+using Google.Protobuf;
+using Tibia.Protobuf.Staticdata;
 
 namespace Canary_monster_editor
 {
@@ -13,8 +14,16 @@ namespace Canary_monster_editor
         public static bool GlobalBossAppearancesObjects { get; set; } = false;
         public static DateTime GlobalFileLastTimeEdited { get; set; } = DateTime.Now;
         public static string GlobalStaticDataPath { get; set; } = "----";
-        public static string GlobalVersion { get { return "v1.0"; } }
-        public static TranslationCulture_t GlobalTranslationType { get; set; } = TranslationCulture_t.Portuguese;
+        public static string GlobalVersion
+        {
+            get { return "v1.0"; }
+        }
+
+        public static TranslationCulture_t GlobalTranslationType
+        {
+            get => TranslationCatalog.CurrentCulture;
+            set => TranslationCatalog.CurrentCulture = value;
+        }
 
         #region Protobuf load/save
         public static bool LoadStaticDataProbufBinaryFileFromPath(string path)
@@ -25,37 +34,17 @@ namespace Canary_monster_editor
             }
 
             using (FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.Read))
+            {
                 GlobalStaticData = StaticData.Parser.ParseFrom(fileStream);
+            }
 
-            if (GlobalStaticData == null || GlobalStaticData.Monster == null || GlobalStaticData.Monster.Count == 0)
+            if (!StaticDataRepository.HasMonsters(GlobalStaticData))
             {
                 return false;
             }
 
-            // Reinicialize para garantir o valor máximo
-            GlobalLastCreatureId = 0;
-
-            foreach (var monster in GlobalStaticData.Monster)
-            {
-                if (monster.Raceid > GlobalLastCreatureId)
-                {
-                    GlobalLastCreatureId = monster.Raceid;
-                }
-            }
-
-            foreach (var boss in GlobalStaticData.Boss)
-            {
-                if (boss.Id > GlobalLastCreatureId)
-                {
-                    GlobalLastCreatureId = boss.Id;
-                }
-
-                if (boss.AppearanceType != null)
-                {
-                    GlobalBossAppearancesObjects = true;
-                }
-            }
-
+            GlobalLastCreatureId = StaticDataRepository.GetHighestCreatureId(GlobalStaticData);
+            GlobalBossAppearancesObjects = StaticDataRepository.HasBossAppearanceObjects(GlobalStaticData);
             GlobalStaticDataPath = path;
             GlobalFileLastTimeEdited = File.GetLastWriteTime(path);
             return true;
@@ -68,8 +57,10 @@ namespace Canary_monster_editor
                 return false;
             }
 
-            using (FileStream fileStream = new FileStream(GlobalStaticDataPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read))
+            using (FileStream fileStream = new FileStream(GlobalStaticDataPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
                 GlobalStaticData.WriteTo(fileStream);
+            }
 
             GlobalFileLastTimeEdited = File.GetLastWriteTime(GlobalStaticDataPath);
             return true;
@@ -79,118 +70,84 @@ namespace Canary_monster_editor
         #region Get objects
         public static Monster GetMonsterByRaceId(uint id)
         {
-            if (id == 0 || GlobalStaticData == null || GlobalStaticData.Monster == null || GlobalStaticData.Monster.Count == 0) {
+            if (id == 0)
+            {
                 return null;
             }
 
-            foreach (var monster in GlobalStaticData.Monster) {
-                if (monster.Raceid == id) {
-                    return monster;
-                }
-            }
-
-            return null;
+            return StaticDataRepository.FindMonster(GlobalStaticData, monster => monster.Raceid == id);
         }
+
         public static Monster GetMonsterByName(string name)
         {
-            if (string.IsNullOrEmpty(name) || GlobalStaticData == null || GlobalStaticData.Monster == null || GlobalStaticData.Monster.Count == 0) {
+            if (string.IsNullOrEmpty(name))
+            {
                 return null;
             }
 
-            foreach (var monster in GlobalStaticData.Monster) {
-                if (monster.Name.ToLower() == name.ToLower()) {
-                    return monster;
-                }
-            }
-
-            return null;
+            return StaticDataRepository.FindMonster(GlobalStaticData, monster => string.Equals(monster.Name, name, StringComparison.OrdinalIgnoreCase));
         }
+
         public static Boss GetBossById(uint id)
         {
-            if (id == 0 || GlobalStaticData == null || GlobalStaticData.Boss == null || GlobalStaticData.Boss.Count == 0) {
+            if (id == 0)
+            {
                 return null;
             }
 
-            foreach (var boss in GlobalStaticData.Boss) {
-                if (boss.Id == id) {
-                    return boss;
-                }
-            }
-
-            return null;
+            return StaticDataRepository.FindBoss(GlobalStaticData, boss => boss.Id == id);
         }
+
         public static Boss GetBossByName(string name)
         {
-            if (string.IsNullOrEmpty(name) || GlobalStaticData == null || GlobalStaticData.Boss == null || GlobalStaticData.Boss.Count == 0) {
+            if (string.IsNullOrEmpty(name))
+            {
                 return null;
             }
 
-            foreach (var boss in GlobalStaticData.Boss) {
-                if (boss.Name.ToLower() == name.ToLower()) {
-                    return boss;
-                }
-            }
-
-            return null;
+            return StaticDataRepository.FindBoss(GlobalStaticData, boss => string.Equals(boss.Name, name, StringComparison.OrdinalIgnoreCase));
         }
         #endregion
 
         #region Delete objects
         public static bool DeleteMonsterByRaceId(uint id)
         {
-            if (id == 0 || GlobalStaticData == null || GlobalStaticData.Monster == null || GlobalStaticData.Monster.Count == 0) {
+            if (id == 0)
+            {
                 return false;
             }
 
-            foreach (var monster in GlobalStaticData.Monster) {
-                if (monster.Raceid == id) {
-                    return GlobalStaticData.Monster.Remove(monster);
-                }
-            }
-
-            return false;
+            return StaticDataRepository.RemoveMonster(GlobalStaticData, monster => monster.Raceid == id);
         }
+
         public static bool DeleteMonsterByName(string name)
         {
-            if (string.IsNullOrEmpty(name) || GlobalStaticData == null || GlobalStaticData.Monster == null || GlobalStaticData.Monster.Count == 0) {
+            if (string.IsNullOrEmpty(name))
+            {
                 return false;
             }
 
-            foreach (var monster in GlobalStaticData.Monster) {
-                if (monster.Name.ToLower() == name.ToLower()) {
-                    return GlobalStaticData.Monster.Remove(monster);
-                }
-            }
-
-            return false;
+            return StaticDataRepository.RemoveMonster(GlobalStaticData, monster => string.Equals(monster.Name, name, StringComparison.OrdinalIgnoreCase));
         }
+
         public static bool DeleteBossByd(uint id)
         {
-            if (id == 0 || GlobalStaticData == null || GlobalStaticData.Boss == null || GlobalStaticData.Boss.Count == 0) {
+            if (id == 0)
+            {
                 return false;
             }
 
-            foreach (var boss in GlobalStaticData.Boss) {
-                if (boss.Id == id) {
-                    return GlobalStaticData.Boss.Remove(boss);
-                }
-            }
-
-            return false;
+            return StaticDataRepository.RemoveBoss(GlobalStaticData, boss => boss.Id == id);
         }
+
         public static bool DeleteBossByName(string name)
         {
-            if (string.IsNullOrEmpty(name) || GlobalStaticData == null || GlobalStaticData.Boss == null || GlobalStaticData.Boss.Count == 0) {
+            if (string.IsNullOrEmpty(name))
+            {
                 return false;
             }
 
-            foreach (var boss in GlobalStaticData.Boss) {
-                if (boss.Name.ToLower() == name.ToLower()) {
-                    return GlobalStaticData.Boss.Remove(boss);
-                }
-            }
-
-            return false;
+            return StaticDataRepository.RemoveBoss(GlobalStaticData, boss => string.Equals(boss.Name, name, StringComparison.OrdinalIgnoreCase));
         }
         #endregion
 
@@ -198,166 +155,33 @@ namespace Canary_monster_editor
         public static void CreateBrandNewMonster()
         {
             GlobalLastCreatureId++;
-            GlobalStaticData.Monster.Add(new Monster()
-            {
-                Raceid = GlobalLastCreatureId,
-                Name = "Brand-new monster #" + GlobalLastCreatureId,
-                AppearanceType = new Appearance_Type()
-                {
-                    Outfittype = 1,
-                    Itemtype = 0,
-                    Outfitaddon = 0,
-                    Colors = new Colors()
-                    {
-                        Lookhead = 0,
-                        Lookbody = 0,
-                        Looklegs = 0,
-                        Lookfeet = 0
-                    }
-                }
-            });
+            EnsureStaticDataCollections();
+            GlobalStaticData.Monster.Add(StaticDataRepository.CreateDefaultMonster(GlobalLastCreatureId, "Brand-new monster #" + GlobalLastCreatureId));
         }
+
         public static void CreateBrandNewBoss()
         {
             GlobalLastCreatureId++;
-            GlobalStaticData.Boss.Add(new Boss()
+            EnsureStaticDataCollections();
+            GlobalStaticData.Boss.Add(StaticDataRepository.CreateDefaultBoss(GlobalLastCreatureId, "Brand-new boss #" + GlobalLastCreatureId, GlobalBossAppearancesObjects));
+        }
+
+        private static void EnsureStaticDataCollections()
+        {
+            if (GlobalStaticData == null)
             {
-                Id = GlobalLastCreatureId,
-                Name = "Brand-new boss #" + GlobalLastCreatureId,
-                AppearanceType = !GlobalBossAppearancesObjects ? null : (new Appearance_Type()
-                {
-                    Outfittype = 1,
-                    Itemtype = 0,
-                    Outfitaddon = 0,
-                    Colors = new Colors()
-                    {
-                        Lookhead = 0,
-                        Lookbody = 0,
-                        Looklegs = 0,
-                        Lookfeet = 0
-                    }
-                })
-            });
+                GlobalStaticData = new StaticData();
+            }
+
         }
         #endregion
 
         #region Culture (Translation)
-        public enum TranslationCulture_t
-        {
-            Portuguese = 0,
-            English = 1
-        }
-        public enum TranslationDictionaryIndex
-        {
-            Open = 0,
-            Save = 1,
-            Delete = 2,
-            New = 3,
-            Monsters = 4,
-            Monster = 5,
-            Bosses = 6,
-            Boss = 7,
-            Name = 8,
-            FileOpenned = 9,
-            LastSaved = 10,
-            DiscardUnsavedChanges = 11,
-            DiscardUnsavedChangesTitle = 12,
-            DeleteObject = 13,
-            DeleteObjectTitle = 14,
-            NewObject = 15,
-            NewObjectTitle = 16,
-            DiscardUnsavedChangesOnAssets = 17,
-            DiscardUnsavedChangesOnAssetsTitle = 18,
-            Author = 19,
-            SelectStaticDataFile = 20,
-            SelectStaticDataFileFilter = 21,
-            BossAppearanceDisabled = 22,
-            Compile = 23,
-            ExportImport = 24,
-            SelectAll = 25,
-            DeselectAll = 26,
-            ExportSelected = 27,
-        }
-        public static readonly Dictionary<TranslationDictionaryIndex, string> TranslationDictionary_portuguese = new Dictionary<TranslationDictionaryIndex, string>
-        {
-            [TranslationDictionaryIndex.Open] = "Abrir",
-            [TranslationDictionaryIndex.Save] = "Salvar",
-            [TranslationDictionaryIndex.Delete] = "Deletar",
-            [TranslationDictionaryIndex.New] = "Novo",
-            [TranslationDictionaryIndex.Monsters] = "Monstros",
-            [TranslationDictionaryIndex.Monster] = "Monstro",
-            [TranslationDictionaryIndex.Bosses] = "Chefes",
-            [TranslationDictionaryIndex.Boss] = "Chefe",
-            [TranslationDictionaryIndex.Name] = "Nome: ",
-            [TranslationDictionaryIndex.FileOpenned] = "Arquivo aberto: ",
-            [TranslationDictionaryIndex.LastSaved] = "Salvo em: ",
-            [TranslationDictionaryIndex.DiscardUnsavedChanges] = "Você tem mudanças não salvas no {0} selecionado, tem certeza que quer descartar estas mudanças?\n Esta ação é irreversivel!",
-            [TranslationDictionaryIndex.DiscardUnsavedChangesTitle] = "Descartar mudanças não salvas",
-            [TranslationDictionaryIndex.DeleteObject] = "Você tem certeza que deseja deletar o {0} com ID: {1} de nome {2} ?\n Esta ação é irreversivel!",
-            [TranslationDictionaryIndex.DeleteObjectTitle] = "Deletar criatura",
-            [TranslationDictionaryIndex.NewObject] = "Você tem certeza que deseja criar um {0} novo ?",
-            [TranslationDictionaryIndex.NewObjectTitle] = "Criar criatura nova",
-            [TranslationDictionaryIndex.DiscardUnsavedChangesOnAssets] = "Você tem dados não salvos no seu Assets, tem certeza que deseja fechar a aplicação e descartar sua alterações?",
-            [TranslationDictionaryIndex.DiscardUnsavedChangesOnAssetsTitle] = "Discartar e fechar aplicação",
-            [TranslationDictionaryIndex.Author] = "Autor: ",
-            [TranslationDictionaryIndex.SelectStaticDataFile] = "Selecione o arquivo 'staticdata-XXXXX.dat' do assets do seu client",
-            [TranslationDictionaryIndex.SelectStaticDataFileFilter] = "Arquivo DAT (*.dat)|*.dat",
-            [TranslationDictionaryIndex.BossAppearanceDisabled] = "Os dados de aparencia dos chefes não estão disponivels pois sua versão de client é inferior a 12.90.",
-            [TranslationDictionaryIndex.Compile] = "Compilar",
-            [TranslationDictionaryIndex.ExportImport] = "Exportar/Importar",
-            [TranslationDictionaryIndex.SelectAll] = "Selecionar Todos",
-            [TranslationDictionaryIndex.DeselectAll] = "Desmarcar Todos",
-            [TranslationDictionaryIndex.ExportSelected] = "Exportar Selecionados"
-        };
-        public static readonly Dictionary<TranslationDictionaryIndex, string> TranslationDictionary_english = new Dictionary<TranslationDictionaryIndex, string>
-        {
-            [TranslationDictionaryIndex.Open] = "Open",
-            [TranslationDictionaryIndex.Save] = "Save",
-            [TranslationDictionaryIndex.Delete] = "Delete",
-            [TranslationDictionaryIndex.New] = "New",
-            [TranslationDictionaryIndex.Monsters] = "Monsters",
-            [TranslationDictionaryIndex.Monster] = "Monster",
-            [TranslationDictionaryIndex.Bosses] = "Bosses",
-            [TranslationDictionaryIndex.Boss] = "Boss",
-            [TranslationDictionaryIndex.Name] = "Name: ",
-            [TranslationDictionaryIndex.FileOpenned] = "File open: ",
-            [TranslationDictionaryIndex.LastSaved] = "Last save: ",
-            [TranslationDictionaryIndex.DiscardUnsavedChanges] = "You have unsaved data on your selected {0}, are you sure you wan't to discard your changes?\n This action is irreversible!",
-            [TranslationDictionaryIndex.DiscardUnsavedChangesTitle] = "Discard unsaved changes",
-            [TranslationDictionaryIndex.DeleteObject] = "Are you sure you want to delete the {0} with ID: {1} named as {2} ?\n This action is irreversible!",
-            [TranslationDictionaryIndex.DeleteObjectTitle] = "Delete creature",
-            [TranslationDictionaryIndex.NewObject] = "Are you sure you want to create a brand-new {0} ?",
-            [TranslationDictionaryIndex.NewObjectTitle] = "New creature",
-            [TranslationDictionaryIndex.DiscardUnsavedChangesOnAssets] = "You have unsaved data on your assets, are you sure you wan't to close the application and discard your changes?",
-            [TranslationDictionaryIndex.DiscardUnsavedChangesOnAssetsTitle] = "Discard and close",
-            [TranslationDictionaryIndex.Author] = "Author: ",
-            [TranslationDictionaryIndex.SelectStaticDataFile] = "Select your client assets 'staticdata-XXXXX.dat' file",
-            [TranslationDictionaryIndex.SelectStaticDataFileFilter] = "DAT file (*.dat)|*.dat",
-            [TranslationDictionaryIndex.BossAppearanceDisabled] = "The bosses appearances data are disabled due to your client version being lower then 12.90.",
-            [TranslationDictionaryIndex.Compile] = "Compile",
-            [TranslationDictionaryIndex.ExportImport] = "Export/Import",
-            [TranslationDictionaryIndex.SelectAll] = "Select All",
-            [TranslationDictionaryIndex.DeselectAll] = "Deselect All",
-            [TranslationDictionaryIndex.ExportSelected] = "Export Selected"
-        };
         public static string GetCultureText(TranslationDictionaryIndex index)
         {
-            string rt = "--";
-            switch (GlobalTranslationType) {
-                case TranslationCulture_t.Portuguese: {
-                        rt = TranslationDictionary_portuguese[index];
-                        break;
-                    };
-                case TranslationCulture_t.English: {
-                        rt = TranslationDictionary_english[index];
-                        break;
-                    };
-                default:
-                    break;
-            }
-
-            return rt;
+            return TranslationCatalog.GetText(index);
         }
         #endregion
     }
 }
+

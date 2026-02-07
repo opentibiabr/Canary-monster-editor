@@ -244,6 +244,7 @@
     <Compile Include="ExportImportWindow.xaml.cs">
       <DependentUpon>ExportImportWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Localization\TranslationCatalog.cs" />
     <Compile Include="Staticdata.cs" />
     <Page Include="ExportImportWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -262,6 +263,7 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Services\StaticDataRepository.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
