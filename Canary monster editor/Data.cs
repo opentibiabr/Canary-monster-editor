@@ -68,7 +68,7 @@ namespace Canary_monster_editor
                 return false;
             }
 
-            using (FileStream fileStream = new FileStream(GlobalStaticDataPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read))
+            using (FileStream fileStream = new FileStream(GlobalStaticDataPath, FileMode.Create, FileAccess.Write, FileShare.None))  
                 GlobalStaticData.WriteTo(fileStream);
 
             GlobalFileLastTimeEdited = File.GetLastWriteTime(GlobalStaticDataPath);
