@@ -277,6 +277,17 @@ namespace Canary_monster_editor
             SelectAll = 25,
             DeselectAll = 26,
             ExportSelected = 27,
+            Load = 28,
+            LoadAssetsAndStaticData = 29,
+            StaticDataPath = 30,
+            AssetsPath = 31,
+            Browse = 32,
+            Cancel = 33,
+            ErrorStaticDataNotFound = 34,
+            ErrorAssetsNotFound = 35,
+            ErrorInvalidAssetsFolder = 36,
+            SelectFolderStaticData = 37,
+            SelectFolderAssets = 38,
         }
         public static readonly Dictionary<TranslationDictionaryIndex, string> TranslationDictionary_portuguese = new Dictionary<TranslationDictionaryIndex, string>
         {
@@ -307,7 +318,18 @@ namespace Canary_monster_editor
             [TranslationDictionaryIndex.ExportImport] = "Exportar/Importar",
             [TranslationDictionaryIndex.SelectAll] = "Selecionar Todos",
             [TranslationDictionaryIndex.DeselectAll] = "Desmarcar Todos",
-            [TranslationDictionaryIndex.ExportSelected] = "Exportar Selecionados"
+            [TranslationDictionaryIndex.ExportSelected] = "Exportar Selecionados",
+            [TranslationDictionaryIndex.Load] = "Carregar",
+            [TranslationDictionaryIndex.LoadAssetsAndStaticData] = "Carregar Assets e StaticData",
+            [TranslationDictionaryIndex.StaticDataPath] = "Caminho do StaticData:",
+            [TranslationDictionaryIndex.AssetsPath] = "Caminho dos Assets:",
+            [TranslationDictionaryIndex.Browse] = "Procurar...",
+            [TranslationDictionaryIndex.Cancel] = "Cancelar",
+            [TranslationDictionaryIndex.ErrorStaticDataNotFound] = "Nenhum arquivo staticdata-*.dat encontrado na pasta selecionada.",
+            [TranslationDictionaryIndex.ErrorAssetsNotFound] = "A pasta dos Assets não existe.",
+            [TranslationDictionaryIndex.ErrorInvalidAssetsFolder] = "Não foram encontrados arquivos de assets válidos na pasta selecionada.\n\nArquivos esperados:\n- catalog-content.json (Tibia 12+), ou\n- appearances.dat/spr ou Tibia.dat/spr (versões antigas)\n\nPor favor, selecione uma pasta válida contendo os arquivos de assets.",
+            [TranslationDictionaryIndex.SelectFolderStaticData] = "Selecione a pasta contendo staticdata-*.dat",
+            [TranslationDictionaryIndex.SelectFolderAssets] = "Selecione a pasta contendo os assets",
         };
         public static readonly Dictionary<TranslationDictionaryIndex, string> TranslationDictionary_english = new Dictionary<TranslationDictionaryIndex, string>
         {
@@ -338,7 +360,18 @@ namespace Canary_monster_editor
             [TranslationDictionaryIndex.ExportImport] = "Export/Import",
             [TranslationDictionaryIndex.SelectAll] = "Select All",
             [TranslationDictionaryIndex.DeselectAll] = "Deselect All",
-            [TranslationDictionaryIndex.ExportSelected] = "Export Selected"
+            [TranslationDictionaryIndex.ExportSelected] = "Export Selected",
+            [TranslationDictionaryIndex.Load] = "Load",
+            [TranslationDictionaryIndex.LoadAssetsAndStaticData] = "Load Assets and StaticData",
+            [TranslationDictionaryIndex.StaticDataPath] = "StaticData Path:",
+            [TranslationDictionaryIndex.AssetsPath] = "Assets Path:",
+            [TranslationDictionaryIndex.Browse] = "Browse...",
+            [TranslationDictionaryIndex.Cancel] = "Cancel",
+            [TranslationDictionaryIndex.ErrorStaticDataNotFound] = "No staticdata-*.dat file found in the selected folder.",
+            [TranslationDictionaryIndex.ErrorAssetsNotFound] = "The Assets folder does not exist.",
+            [TranslationDictionaryIndex.ErrorInvalidAssetsFolder] = "No valid asset files found in the selected folder.\n\nExpected files:\n- catalog-content.json (Tibia 12+), or\n- appearances.dat/spr or Tibia.dat/spr (older versions)\n\nPlease select a valid folder containing asset files.",
+            [TranslationDictionaryIndex.SelectFolderStaticData] = "Select the folder containing staticdata-*.dat",
+            [TranslationDictionaryIndex.SelectFolderAssets] = "Select the folder containing assets",
         };
         public static string GetCultureText(TranslationDictionaryIndex index)
         {

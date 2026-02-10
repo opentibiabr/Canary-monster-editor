@@ -150,11 +150,11 @@
             <Rectangle MouseDown="MouseDownToDrag_var" Fill="White" Opacity="0"/>
             <TextBlock x:Name="BossAppearance_textblock" Text="BossAppearance_textblock" Margin="0,5,5,0" Foreground="White" FontWeight="Normal" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Top" Background="#FFA62F26" Padding="5,5,5,5" Opacity="0"/>
             <StackPanel>
-                <Grid x:Name="PreviewArea_grid" Height="128" Width="128" HorizontalAlignment="Center" Margin="0,15,0,15" MouseUp="PreviewArea_grid_MouseUp" Cursor="Hand">
+                <Grid x:Name="PreviewArea_grid" Height="128" Width="128" HorizontalAlignment="Center" Margin="0,15,0,15">
                     <Rectangle Fill="#FF23242D" RadiusX="4" RadiusY="4"/>
                     <Rectangle Stroke="#FF383838" StrokeThickness="1" RadiusX="4" RadiusY="4" Opacity="0.5"/>
                     <Image x:Name="MonsterPreview_image" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" IsHitTestVisible="False"/>
-                    <TextBlock x:Name="PreviewStatus_textblock" Text="Click here to load Assets" Foreground="#FF555555" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10" IsHitTestVisible="False"/>
+                    <TextBlock x:Name="PreviewStatus_textblock" Foreground="#FF555555" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10" IsHitTestVisible="False"/>
                 </Grid>
                 <StackPanel Margin="0,0,0,0" Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Center">
                     <TextBlock x:Name="ShowName_textblock" Text="ShowName_textblock" Margin="0,0,5,0" IsHitTestVisible="False" Foreground="#FFACAFAF" VerticalAlignment="Center"/>

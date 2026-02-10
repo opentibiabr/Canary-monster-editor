@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -171,34 +172,37 @@ namespace Canary_monster_editor
             switch (name) {
                 case "MainButton_rectangle": {
                         if (GlobalStaticData == null) {
-                            OpenFileDialog openFileDialog = new OpenFileDialog
-                            {
-                                Title = GetCultureText(TranslationDictionaryIndex.SelectStaticDataFile),
-                                Filter = GetCultureText(TranslationDictionaryIndex.SelectStaticDataFileFilter),
-                                FilterIndex = 1,
-                                Multiselect = false,
-                                CheckFileExists = true,
-                            };
+                            LoadAssetsWindow loadWindow = new LoadAssetsWindow();
+                            loadWindow.Owner = this;
+                            loadWindow.ShowDialog();
 
-                            if (!(bool)openFileDialog.ShowDialog()) {
+                            if (!loadWindow.LoadSuccessful) {
                                 return;
                             }
 
-                            if (!LoadStaticDataProbufBinaryFileFromPath(openFileDialog.FileName)) {
+                            string staticDataFile = FindLatestStaticDataFile(loadWindow.StaticDataPath);
+                            if (string.IsNullOrEmpty(staticDataFile)) {
+                                MessageBox.Show("Nenhum arquivo staticdata-*.dat encontrado na pasta selecionada.",
+                                    "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                                return;
+                            }
+
+                            if (!LoadStaticDataProbufBinaryFileFromPath(staticDataFile)) {
+                                MessageBox.Show("Falha ao carregar o arquivo staticdata.",
+                                    "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                                return;
+                            }
+
+                            if (!AssetLoader.Instance.LoadAssets(loadWindow.AssetsPath)) {
+                                MessageBox.Show("Falha ao carregar os assets. Verifique se a pasta contém os arquivos necessários.",
+                                    "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
                                 return;
                             }
 
                             MainButon_textblock.Text = GetCultureText(TranslationDictionaryIndex.Compile).ToUpper();
                             LastSave_textblock.Text = GetCultureText(TranslationDictionaryIndex.LastSaved) + GlobalFileLastTimeEdited.ToString();
                             FileOpenned_textblock.Text = GetCultureText(TranslationDictionaryIndex.FileOpenned) + GlobalStaticDataPath;
-
-                            // Load assets if found
-                            if (AssetLoader.Instance.LoadAssets(System.IO.Path.GetDirectoryName(openFileDialog.FileName))) {
-                                PreviewStatus_textblock.Visibility = Visibility.Collapsed;
-                            } else {
-                                PreviewStatus_textblock.Visibility = Visibility.Visible;
-                                PreviewStatus_textblock.Text = "Click here to load Assets";
-                            }
+                            PreviewStatus_textblock.Visibility = Visibility.Collapsed;
 
                             ReloadMainListBox();
                             return;
@@ -580,7 +584,7 @@ namespace Canary_monster_editor
         private void InitializeCultureTexts()
         {
             if (GlobalStaticData == null) {
-                MainButon_textblock.Text = GetCultureText(TranslationDictionaryIndex.Open).ToUpper();
+                MainButon_textblock.Text = GetCultureText(TranslationDictionaryIndex.Load).ToUpper();
             } else {
                 MainButon_textblock.Text = GetCultureText(TranslationDictionaryIndex.Compile).ToUpper();
             }
@@ -763,28 +767,6 @@ namespace Canary_monster_editor
                 PreviewStatus_textblock.Text = "Preview error (see log)";
             }
         }
-        private void PreviewArea_grid_MouseUp(object sender, MouseButtonEventArgs e)
-        {
-            if (AssetLoader.Instance.IsLoaded) return;
-
-            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
-            {
-                dialog.Description = "Select the folder containing assets (e.g. appearances.dat/spr or Tibia.dat/spr)";
-                dialog.ShowNewFolderButton = false;
-                
-                if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                {
-                    if (AssetLoader.Instance.LoadAssets(dialog.SelectedPath)) {
-                        PreviewStatus_textblock.Visibility = Visibility.Collapsed;
-                        UpdatePreview();
-                    } else {
-                        PreviewStatus_textblock.Visibility = Visibility.Visible;
-                        PreviewStatus_textblock.Text = "Click here to load Assets";
-                        MessageBox.Show("Assets (*.dat and *.spr) not found in selected folder.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
-                }
-            }
-        }
 
         private void StartPreviewAnimation(AssetLoader.MonsterPreviewSequence sequence)
         {
@@ -863,5 +845,19 @@ namespace Canary_monster_editor
                 // ignore logging errors
             }
         }        
+        private string FindLatestStaticDataFile(string directory)
+        {
+            try
+            {
+                var files = System.IO.Directory.GetFiles(directory, "staticdata-*.dat", System.IO.SearchOption.TopDirectoryOnly);
+                if (files.Length == 0) return null;
+
+                return files.OrderByDescending(f => System.IO.File.GetLastWriteTime(f)).First();
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
 }
