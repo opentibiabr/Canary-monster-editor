@@ -291,6 +291,9 @@ namespace Canary_monster_editor
             ErrorNoStaticDataFound = 40,
             ErrorLoadStaticDataFailed = 41,
             ErrorLoadAssetsFailed = 42,
+            ClickToLoadAssets = 43,
+            NoPreview = 44,
+            PreviewError = 45,
         }
         public static readonly Dictionary<TranslationDictionaryIndex, string> TranslationDictionary_portuguese = new Dictionary<TranslationDictionaryIndex, string>
         {
@@ -337,6 +340,9 @@ namespace Canary_monster_editor
             [TranslationDictionaryIndex.ErrorNoStaticDataFound] = "Nenhum arquivo staticdata-*.dat encontrado na pasta selecionada.",
             [TranslationDictionaryIndex.ErrorLoadStaticDataFailed] = "Falha ao carregar o arquivo staticdata.",
             [TranslationDictionaryIndex.ErrorLoadAssetsFailed] = "Falha ao carregar os assets. Verifique se a pasta contém os arquivos necessários.",
+            [TranslationDictionaryIndex.ClickToLoadAssets] = "Clique aqui para carregar Assets",
+            [TranslationDictionaryIndex.NoPreview] = "Sem preview",
+            [TranslationDictionaryIndex.PreviewError] = "Erro no preview (veja o log)",
         };
         public static readonly Dictionary<TranslationDictionaryIndex, string> TranslationDictionary_english = new Dictionary<TranslationDictionaryIndex, string>
         {
@@ -383,6 +389,9 @@ namespace Canary_monster_editor
             [TranslationDictionaryIndex.ErrorNoStaticDataFound] = "No staticdata-*.dat file found in the selected folder.",
             [TranslationDictionaryIndex.ErrorLoadStaticDataFailed] = "Failed to load staticdata file.",
             [TranslationDictionaryIndex.ErrorLoadAssetsFailed] = "Failed to load assets. Please verify the folder contains the required files.",
+            [TranslationDictionaryIndex.ClickToLoadAssets] = "Click here to load Assets",
+            [TranslationDictionaryIndex.NoPreview] = "No preview",
+            [TranslationDictionaryIndex.PreviewError] = "Preview error (see log)",
         };
         public static string GetCultureText(TranslationDictionaryIndex index)
         {

@@ -109,6 +109,7 @@ namespace Canary_monster_editor
 
         public MemoryStream GetSpriteStream(uint spriteId)
         {
+            CheckDisposed();
             if (spriteId == 0) return new MemoryStream();
 
             if (spritePngCache.TryGetValue(spriteId, out var cachedBytes) && cachedBytes != null && cachedBytes.Length > 0)
@@ -172,6 +173,7 @@ namespace Canary_monster_editor
 
         public string GetSpriteFileForId(uint spriteId)
         {
+            CheckDisposed();
             if (!spriteMap.TryGetValue(spriteId, out var entryIndex)) return null;
             if (entryIndex < 0 || entryIndex >= entries.Count) return null;
             return entries[entryIndex].File;
@@ -179,6 +181,7 @@ namespace Canary_monster_editor
 
         private SpriteSheetCacheEntry GetOrLoadSheet(SpriteCatalogEntry entry)
         {
+            CheckDisposed();
             if (entry == null || string.IsNullOrEmpty(entry.File)) return null;
 
             lock (sheetLock)
@@ -280,103 +283,18 @@ namespace Canary_monster_editor
 
             try
             {
-                int offset = 0;
-                while (offset < data.Length && data[offset] == 0)
-                {
-                    offset += 1;
-                }
+                var stripped = LzmaUtils.StripCipHeader(data);
+                var result = LzmaUtils.DecompressLzma(stripped);
+                if (result != null) return result;
 
-                if (offset + 5 > data.Length) return DecompressLzma(data);
-                offset += 5; // skip CIP constant
-
-                while (offset < data.Length)
-                {
-                    byte b = data[offset++];
-                    if ((b & 0x80) == 0)
-                    {
-                        break;
-                    }
-                }
-
-                if (offset >= data.Length) return DecompressLzma(data);
-
-                var lzmaData = new byte[data.Length - offset];
-                Buffer.BlockCopy(data, offset, lzmaData, 0, lzmaData.Length);
-                return DecompressLzma(lzmaData);
-            }
-            catch
-            {
-                try
-                {
-                    return DecompressLzma(data);
-                }
-                catch
-                {
-                    return null;
-                }
-            }
-        }
-
-        private static byte[] DecompressLzma(byte[] data)
-        {
-            if (data == null || data.Length < 13) return null;
-
-            var patched = PatchLzmaHeader(data);
-            if (patched != null && TryDecodeLzma(patched, useHeaderSize: false, out var decoded)) return decoded;
-
-            if (TryDecodeLzma(data, useHeaderSize: false, out decoded)) return decoded;
-
-            if (TryDecodeLzma(data, useHeaderSize: true, out decoded)) return decoded;
-            return null;
-        }
-
-        private static bool TryDecodeLzma(byte[] data, bool useHeaderSize, out byte[] outputBytes)
-        {
-            outputBytes = null;
-            try
-            {
-                using (var input = new MemoryStream(data))
-                using (var output = new MemoryStream())
-                {
-                    byte[] props = new byte[5];
-                    if (input.Read(props, 0, 5) != 5) return false;
-
-                    var decoder = new SevenZip.Compression.LZMA.Decoder();
-                    decoder.SetDecoderProperties(props);
-
-                    byte[] sizeBytes = new byte[8];
-                    if (input.Read(sizeBytes, 0, 8) != 8) return false;
-
-                    long outSize = BitConverter.ToInt64(sizeBytes, 0);
-                    if (!useHeaderSize || outSize <= 0)
-                    {
-                        outSize = long.MaxValue;
-                    }
-
-                    long inSize = input.Length - input.Position;
-                    decoder.Code(input, output, inSize, outSize, null);
-                    outputBytes = output.ToArray();
-                    return outputBytes != null && outputBytes.Length > 0;
-                }
+                // Fallback: try without stripping
+                return LzmaUtils.DecompressLzma(data);
             }
             catch (Exception ex)
             {
-                AppendLog($"SpriteCatalogStorage: LZMA decode failed (useHeaderSize={useHeaderSize}): {ex.GetType().Name} - {ex.Message}");
-                AppendLog(ex.StackTrace ?? "no stack");
-                return false;
+                AppendLog($"SpriteCatalogStorage: DecompressCatalogLzma failed: {ex.Message}");
+                return null;
             }
-        }
-
-        private static byte[] PatchLzmaHeader(byte[] data)
-        {
-            if (data == null || data.Length < 13) return null;
-            var patched = new byte[data.Length];
-            Buffer.BlockCopy(data, 0, patched, 0, data.Length);
-            for (int i = 5; i < 13; i++)
-            {
-                patched[i] = 0xFF;
-            }
-            return patched;
         }
 
         public void Dispose()

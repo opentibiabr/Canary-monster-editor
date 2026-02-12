@@ -723,7 +723,7 @@ namespace Canary_monster_editor
                 if (!AssetLoader.Instance.IsLoaded) {
                     MonsterPreview_image.Source = null;
                     PreviewStatus_textblock.Visibility = Visibility.Visible;
-                    PreviewStatus_textblock.Text = "Click here to load Assets";
+                    PreviewStatus_textblock.Text = GetCultureText(TranslationDictionaryIndex.ClickToLoadAssets);
                     return;
                 }
 
@@ -750,7 +750,7 @@ namespace Canary_monster_editor
                 } else {
                     MonsterPreview_image.Source = null;
                     PreviewStatus_textblock.Visibility = Visibility.Visible;
-                    PreviewStatus_textblock.Text = "No preview";
+                    PreviewStatus_textblock.Text = GetCultureText(TranslationDictionaryIndex.NoPreview);
                     WritePreviewDebugLog(lookType, lookTypeEx, head, body, legs, feet, addon);
                 }
             }
@@ -764,7 +764,7 @@ namespace Canary_monster_editor
                 catch { }
                 MonsterPreview_image.Source = null;
                 PreviewStatus_textblock.Visibility = Visibility.Visible;
-                PreviewStatus_textblock.Text = "Preview error (see log)";
+                PreviewStatus_textblock.Text = GetCultureText(TranslationDictionaryIndex.PreviewError);
             }
         }
 

@@ -89,24 +89,28 @@ namespace Canary_monster_editor
 
                     if (appearancesFile != null && File.Exists(appearancesFile) && hasCatalogSprites)
                     {
-                         CatalogStorage = SpriteCatalogStorage.TryCreate(jsonPath, assetPath);
-                         if (CatalogStorage != null)
-                         {
-                             SpriteStorage = null;
-                             ParseAppearances(appearancesFile);
-                             IsLoaded = true;
-                             return true;
-                         }
+                        if (CatalogStorage != null) { CatalogStorage.Dispose(); CatalogStorage = null; }
+                        if (SpriteStorage != null) { SpriteStorage.Dispose(); SpriteStorage = null; }
+                        CatalogStorage = SpriteCatalogStorage.TryCreate(jsonPath, assetPath);
+                        if (CatalogStorage != null)
+                        {
+                            SpriteStorage = null;
+                            ParseAppearances(appearancesFile);
+                            IsLoaded = true;
+                            return true;
+                        }
                     }
 
                     if (appearancesFile != null && File.Exists(appearancesFile) && spritesFile != null && File.Exists(spritesFile))
                     {
-                         SpriteStorage = new SpriteStorage(spritesFile, true); 
-                         SpriteStorage.LoadSprites();
-                         CatalogStorage = null;
-                         ParseAppearances(appearancesFile);
-                         IsLoaded = true;
-                         return true;
+                        if (CatalogStorage != null) { CatalogStorage.Dispose(); CatalogStorage = null; }
+                        if (SpriteStorage != null) { SpriteStorage.Dispose(); SpriteStorage = null; }
+                        SpriteStorage = new SpriteStorage(spritesFile, true);
+                        SpriteStorage.LoadSprites();
+                        CatalogStorage = null;
+                        ParseAppearances(appearancesFile);
+                        IsLoaded = true;
+                        return true;
                     }
                 }
 
@@ -204,6 +208,8 @@ namespace Canary_monster_editor
 
                 if (sprPath == null || datPath == null) return false;
 
+                if (CatalogStorage != null) { CatalogStorage.Dispose(); CatalogStorage = null; }
+                if (SpriteStorage != null) { SpriteStorage.Dispose(); SpriteStorage = null; }
                 SpriteStorage = new SpriteStorage(sprPath, true);
                 SpriteStorage.LoadSprites();
                 CatalogStorage = null;
@@ -286,45 +292,17 @@ namespace Canary_monster_editor
 
             try
             {
-                int offset = 0;
-                while (offset < data.Length && data[offset] == 0)
-                {
-                    offset += 1;
-                }
+                var stripped = LzmaUtils.StripCipHeader(data);
+                var result = LzmaUtils.DecompressLzma(stripped);
+                if (result != null) return result;
 
-                if (offset + 5 > data.Length) return DecompressLzmaBytes(data);
-                offset += 5; // skip CIP constant
-
-                while (offset < data.Length)
-                {
-                    byte b = data[offset++];
-                    if ((b & 0x80) == 0)
-                    {
-                        break;
-                    }
-                }
-
-                if (offset >= data.Length) return DecompressLzmaBytes(data);
-                byte[] lzmaData = new byte[data.Length - offset];
-                Buffer.BlockCopy(data, offset, lzmaData, 0, lzmaData.Length);
-                return DecompressLzmaBytes(lzmaData);
+                // Fallback: try without stripping
+                return LzmaUtils.DecompressLzma(data);
             }
             catch
             {
-                try
-                {
-                    return DecompressLzmaBytes(data);
-                }
-                catch
-                {
-                    return null;
-                }
+                return null;
             }
-        }
-
-        private byte[] DecompressLzmaBytes(byte[] data)
-        {
-            return LzmaUtils.DecompressLzma(data);
         }
 
         private ClientAppearance ParseAppearance(ByteString data)

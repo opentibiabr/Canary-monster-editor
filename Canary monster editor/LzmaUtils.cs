@@ -18,6 +18,35 @@ namespace Canary_monster_editor
             return null;
         }
 
+        public static byte[] StripCipHeader(byte[] data)
+        {
+            if (data == null || data.Length == 0) return null;
+
+            int offset = 0;
+            while (offset < data.Length && data[offset] == 0)
+            {
+                offset += 1;
+            }
+
+            if (offset + 5 > data.Length) return data;
+            offset += 5; // skip CIP constant
+
+            while (offset < data.Length)
+            {
+                byte b = data[offset++];
+                if ((b & 0x80) == 0)
+                {
+                    break;
+                }
+            }
+
+            if (offset >= data.Length) return data;
+
+            var result = new byte[data.Length - offset];
+            Buffer.BlockCopy(data, offset, result, 0, result.Length);
+            return result;
+        }
+
         private static bool TryDecodeLzma(byte[] data, bool useHeaderSize, out byte[] outputBytes)
         {
             outputBytes = null;

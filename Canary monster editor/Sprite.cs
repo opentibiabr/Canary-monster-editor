@@ -124,7 +124,7 @@ namespace Canary_monster_editor
         }
     }
 
-    public class SpriteStorage
+    public class SpriteStorage : IDisposable
     {
         public string SprPath { get; set; }
         public uint Signature;
@@ -204,6 +204,30 @@ namespace Canary_monster_editor
             SprLists[sprite.ID] = pngBytes;
 
             return new MemoryStream(pngBytes, writable: false);
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (Sprites != null)
+                {
+                    Sprites.Clear();
+                    Sprites = null;
+                }
+
+                if (SprLists != null)
+                {
+                    SprLists.Clear();
+                    SprLists = null;
+                }
+            }
         }
     }
 }
