@@ -1,0 +1,60 @@
+<Window x:Class="Canary_monster_editor.LoadAssetsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Load Assets and StaticData" Height="300" Width="600"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        ResizeMode="NoResize"
+        Background="Transparent">
+
+    <Border BorderBrush="#FF5F5A5A" BorderThickness="1" Background="#FF18191D" CornerRadius="2">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="30"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Background="#FF232020" BorderBrush="#FF5F5A5A" BorderThickness="0,0,0,1"
+                    MouseDown="TitleBar_MouseDown">
+                <TextBlock x:Name="Title_textblock" Text="Load Assets and StaticData"
+                           Foreground="#FFB76623"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"
+                           Margin="10,0,0,0"/>
+            </Border>
+
+            <StackPanel Grid.Row="1" Margin="20">
+                <TextBlock x:Name="StaticDataPathLabel_textblock" Text="StaticData Path:" Foreground="#FFABADB3" Margin="0,0,0,5"/>
+                <Grid Margin="0,0,0,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="StaticDataPath_textbox" Background="#FF23242D" Foreground="#FFABADB3"
+                             Padding="5" IsReadOnly="True"/>
+                    <Button x:Name="BrowseStaticDataButton" Grid.Column="1" Content="Browse..." Click="BrowseStaticData_Click"
+                            Margin="5,0,0,0" Padding="10,5"/>
+                </Grid>
+
+                <TextBlock x:Name="AssetsPathLabel_textblock" Text="Assets Path:" Foreground="#FFABADB3" Margin="0,0,0,5"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="AssetsPath_textbox" Background="#FF23242D" Foreground="#FFABADB3"
+                             Padding="5" IsReadOnly="True"/>
+                    <Button x:Name="BrowseAssetsButton" Grid.Column="1" Content="Browse..." Click="BrowseAssets_Click"
+                            Margin="5,0,0,0" Padding="10,5"/>
+                </Grid>
+            </StackPanel>
+
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="20,10,20,20">
+                <Button x:Name="LoadButton" Content="Load" Click="LoadButton_Click" Padding="20,5" Margin="0,0,10,0"/>
+                <Button x:Name="CancelButton" Content="Cancel" Click="CancelButton_Click" Padding="20,5"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

@@ -1,12 +1,15 @@
 ﻿using Microsoft.Win32;
 using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Shapes;
 using Tibia.Protobuf.Staticdata;
 using static Canary_monster_editor.Data;
-
+using System.IO;
+using System.Windows.Media;
+using System.Windows.Threading;
 namespace Canary_monster_editor
 {
     public class InternalItemList
@@ -39,10 +42,16 @@ namespace Canary_monster_editor
         private static readonly string InternalGithubUri = "https://github.com/opentibiabr";
         private static readonly string InternalDiscordUri = "https://discordapp.com/invite/3NxYnyV";
         private static readonly string InternalForumUri = "https://forums.otserv.com.br/";
+        private static readonly string DefaultAssetsPath = "";
+
+        private DispatcherTimer PreviewTimer;
+        private AssetLoader.MonsterPreviewSequence PreviewSequence;
+        private int PreviewFrameIndex = 0;        
         public MainWindow()
         {
             InitializeComponent();
             InitializeCultureTexts();
+            TryAutoLoadAssets();
         }
 
         #region 'Monster', 'bosses' and "Export/Import" button. (Secondary)
@@ -163,26 +172,38 @@ namespace Canary_monster_editor
             switch (name) {
                 case "MainButton_rectangle": {
                         if (GlobalStaticData == null) {
-                            OpenFileDialog openFileDialog = new OpenFileDialog
-                            {
-                                Title = GetCultureText(TranslationDictionaryIndex.SelectStaticDataFile),
-                                Filter = GetCultureText(TranslationDictionaryIndex.SelectStaticDataFileFilter),
-                                FilterIndex = 1,
-                                Multiselect = false,
-                                CheckFileExists = true,
-                            };
+                            LoadAssetsWindow loadWindow = new LoadAssetsWindow();
+                            loadWindow.Owner = this;
+                            loadWindow.ShowDialog();
 
-                            if (!(bool)openFileDialog.ShowDialog()) {
+                            if (!loadWindow.LoadSuccessful) {
                                 return;
                             }
 
-                            if (!LoadStaticDataProbufBinaryFileFromPath(openFileDialog.FileName)) {
+                            string staticDataFile = FindLatestStaticDataFile(loadWindow.StaticDataPath);
+                            if (string.IsNullOrEmpty(staticDataFile)) {
+                                MessageBox.Show(GetCultureText(TranslationDictionaryIndex.ErrorNoStaticDataFound),
+                                    GetCultureText(TranslationDictionaryIndex.ErrorTitle), MessageBoxButton.OK, MessageBoxImage.Error);
+                                return;
+                            }
+
+                            if (!LoadStaticDataProbufBinaryFileFromPath(staticDataFile)) {
+                                MessageBox.Show(GetCultureText(TranslationDictionaryIndex.ErrorLoadStaticDataFailed),
+                                    GetCultureText(TranslationDictionaryIndex.ErrorTitle), MessageBoxButton.OK, MessageBoxImage.Error);
+                                return;
+                            }
+
+                            if (!AssetLoader.Instance.LoadAssets(loadWindow.AssetsPath)) {
+                                MessageBox.Show(GetCultureText(TranslationDictionaryIndex.ErrorLoadAssetsFailed),
+                                    GetCultureText(TranslationDictionaryIndex.ErrorTitle), MessageBoxButton.OK, MessageBoxImage.Error);
                                 return;
                             }
 
                             MainButon_textblock.Text = GetCultureText(TranslationDictionaryIndex.Compile).ToUpper();
                             LastSave_textblock.Text = GetCultureText(TranslationDictionaryIndex.LastSaved) + GlobalFileLastTimeEdited.ToString();
                             FileOpenned_textblock.Text = GetCultureText(TranslationDictionaryIndex.FileOpenned) + GlobalStaticDataPath;
+                            PreviewStatus_textblock.Visibility = Visibility.Collapsed;
+
                             ReloadMainListBox();
                             return;
                         }
@@ -291,7 +312,7 @@ namespace Canary_monster_editor
 
                             uint parsedUint = 0;
                             uint.TryParse(ShowLookType_textbox.Text, out parsedUint);
-                            monster.AppearanceType.Outfittype = 0;
+                            monster.AppearanceType.Outfittype = parsedUint;
                             parsedUint = 0;
 
                             uint.TryParse(ShowAddon_textbox.Text, out parsedUint);
@@ -434,6 +455,7 @@ namespace Canary_monster_editor
             }
 
             HasChangeMade = true;
+            UpdatePreview();
         }
         protected override void OnClosed(EventArgs e)
         {
@@ -562,7 +584,7 @@ namespace Canary_monster_editor
         private void InitializeCultureTexts()
         {
             if (GlobalStaticData == null) {
-                MainButon_textblock.Text = GetCultureText(TranslationDictionaryIndex.Open).ToUpper();
+                MainButon_textblock.Text = GetCultureText(TranslationDictionaryIndex.Load).ToUpper();
             } else {
                 MainButon_textblock.Text = GetCultureText(TranslationDictionaryIndex.Compile).ToUpper();
             }
@@ -576,7 +598,6 @@ namespace Canary_monster_editor
             ShowDelete_textblock.Text = GetCultureText(TranslationDictionaryIndex.Delete);
             ShowNew_textblock.Text = GetCultureText(TranslationDictionaryIndex.New);
             ShowSave_textblock.Text = GetCultureText(TranslationDictionaryIndex.Save);
-            ToolName_textblock.Text = "Canary monster editor " + GlobalVersion;
             ExportImportButon_textblock.Text = GetCultureText(TranslationDictionaryIndex.ExportImport);
 
             if (SelectedListType_t == ListType.Monsters) {
@@ -593,7 +614,7 @@ namespace Canary_monster_editor
         }
         #endregion
 
-        #region Load and initializers
+        // Load and initializers
         public void ReloadMainListBox()
         {
             if (GlobalStaticData == null) {
@@ -690,9 +711,153 @@ namespace Canary_monster_editor
                 ShowLookFeet_textbox.Text = monster.AppearanceType != null ? (monster.AppearanceType.Colors != null ? monster.AppearanceType.Colors.Lookfeet.ToString() : "") : "";
             }
 
+            UpdatePreview();
             HasChangeMade = false;
         }
-        #endregion
+        private void UpdatePreview()
+        {
+            try
+            {
+                StopPreviewAnimation();
 
+                if (!AssetLoader.Instance.IsLoaded) {
+                    MonsterPreview_image.Source = null;
+                    PreviewStatus_textblock.Visibility = Visibility.Visible;
+                    PreviewStatus_textblock.Text = GetCultureText(TranslationDictionaryIndex.ClickToLoadAssets);
+                    return;
+                }
+
+                uint lookType = 0;
+                uint lookTypeEx = 0;
+                uint head = 0;
+                uint body = 0;
+                uint legs = 0;
+                uint feet = 0;
+                uint addon = 0;
+
+                uint.TryParse(ShowLookType_textbox.Text, out lookType);
+                uint.TryParse(ShowLookTypeEx_textbox.Text, out lookTypeEx);
+                uint.TryParse(ShowLookHead_textbox.Text, out head);
+                uint.TryParse(ShowLookBody_textbox.Text, out body);
+                uint.TryParse(ShowLookLegs_textbox.Text, out legs);
+                uint.TryParse(ShowLookFeet_textbox.Text, out feet);
+                uint.TryParse(ShowAddon_textbox.Text, out addon);
+
+                var sequence = AssetLoader.Instance.GetMonsterPreviewSequence(lookType, lookTypeEx, head, body, legs, feet, addon);
+                if (sequence != null && sequence.Frames.Count > 0) {
+                    StartPreviewAnimation(sequence);
+                    PreviewStatus_textblock.Visibility = Visibility.Collapsed;
+                } else {
+                    MonsterPreview_image.Source = null;
+                    PreviewStatus_textblock.Visibility = Visibility.Visible;
+                    PreviewStatus_textblock.Text = GetCultureText(TranslationDictionaryIndex.NoPreview);
+                    WritePreviewDebugLog(lookType, lookTypeEx, head, body, legs, feet, addon);
+                }
+            }
+            catch (Exception ex)
+            {
+                try
+                {
+                    string logPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "preview-debug.log");
+                    File.AppendAllText(logPath, $"Preview crash: {ex.GetType().Name} - {ex.Message}{Environment.NewLine}{ex.StackTrace}{Environment.NewLine}");
+                }
+                catch { }
+                MonsterPreview_image.Source = null;
+                PreviewStatus_textblock.Visibility = Visibility.Visible;
+                PreviewStatus_textblock.Text = GetCultureText(TranslationDictionaryIndex.PreviewError);
+            }
+        }
+
+        private void StartPreviewAnimation(AssetLoader.MonsterPreviewSequence sequence)
+        {
+            if (sequence == null || sequence.Frames.Count == 0) return;
+
+            PreviewSequence = sequence;
+            PreviewFrameIndex = 0;
+            MonsterPreview_image.Source = sequence.Frames[0];
+
+            if (sequence.Frames.Count <= 1) return;
+
+            if (PreviewTimer == null)
+            {
+                PreviewTimer = new DispatcherTimer();
+                PreviewTimer.Tick += (s, e) => AdvancePreviewFrame();
+            }
+
+            int initialDuration = sequence.DurationsMs.Count > 0 ? sequence.DurationsMs[0] : 100;
+            PreviewTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(16, initialDuration));
+            PreviewTimer.Start();
+        }
+
+        private void AdvancePreviewFrame()
+        {
+            if (PreviewSequence == null || PreviewSequence.Frames.Count == 0)
+            {
+                StopPreviewAnimation();
+                return;
+            }
+
+            PreviewFrameIndex = (PreviewFrameIndex + 1) % PreviewSequence.Frames.Count;
+            MonsterPreview_image.Source = PreviewSequence.Frames[PreviewFrameIndex];
+
+            int duration = 100;
+            if (PreviewSequence.DurationsMs.Count > PreviewFrameIndex)
+            {
+                duration = PreviewSequence.DurationsMs[PreviewFrameIndex];
+            }
+            PreviewTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(16, duration));
+        }
+
+        private void StopPreviewAnimation()
+        {
+            if (PreviewTimer != null)
+            {
+                PreviewTimer.Stop();
+            }
+            PreviewSequence = null;
+            PreviewFrameIndex = 0;
+        }
+
+        private void TryAutoLoadAssets()
+        {
+            if (AssetLoader.Instance.IsLoaded) return;
+            if (string.IsNullOrWhiteSpace(DefaultAssetsPath)) return;
+            if (!Directory.Exists(DefaultAssetsPath)) return;
+
+            if (AssetLoader.Instance.LoadAssets(DefaultAssetsPath))
+            {
+                PreviewStatus_textblock.Visibility = Visibility.Collapsed;
+                UpdatePreview();
+            }
+        }
+
+        private void WritePreviewDebugLog(uint lookType, uint lookTypeEx, uint head, uint body, uint legs, uint feet, uint addon)
+        {
+            try
+            {
+                string info = AssetLoader.Instance.GetPreviewDebugInfo(lookType, lookTypeEx, head, body, legs, feet, addon);
+                string logPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "preview-debug.log");
+                File.AppendAllText(logPath, info + Environment.NewLine);
+                PreviewStatus_textblock.Text = $"No preview (see {logPath})";
+            }
+            catch
+            {
+                // ignore logging errors
+            }
+        }        
+        private string FindLatestStaticDataFile(string directory)
+        {
+            try
+            {
+                var files = System.IO.Directory.GetFiles(directory, "staticdata-*.dat", System.IO.SearchOption.TopDirectoryOnly);
+                if (files.Length == 0) return null;
+
+                return files.OrderByDescending(f => System.IO.File.GetLastWriteTime(f)).First();
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
 }
