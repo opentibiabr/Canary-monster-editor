@@ -196,7 +196,8 @@
                 <StackPanel Margin="0,0,0,0" Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Center">
                     <TextBlock x:Name="ShowName_textblock" Text="ShowName_textblock" Margin="0,0,5,0" IsHitTestVisible="False" Foreground="#FFACAFAF" VerticalAlignment="Center"/>
                     <TextBox x:Name="ShowName_textbox" TextChanged="TextChanged_textblock" Width="220" Background="#FF23242D" Foreground="#FFABADB3"/>
-                    <TextBlock x:Name="ShowRaceId_textblock" Text="ID: " Margin="10,0,5,0" IsHitTestVisible="False" Foreground="#FFACAFAF" VerticalAlignment="Center" FontSize="14"/>
+                    <TextBlock Text="ID: " Margin="10,0,5,0" IsHitTestVisible="False" Foreground="#FFACAFAF" VerticalAlignment="Center" FontSize="14"/>
+                    <TextBox x:Name="ShowRaceId_textbox" TextChanged="TextChanged_textblock" Width="75" Background="#FF23242D" Foreground="#FFABADB3"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,25,0,0" HorizontalAlignment="Center">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Center">
